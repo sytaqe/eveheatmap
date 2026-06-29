@@ -19,6 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 0  # need full history so kill data commits are included
 
       - uses: actions/setup-python@v5
