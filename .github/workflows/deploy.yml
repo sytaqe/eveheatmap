@@ -4,6 +4,9 @@ on:
   schedule:
     - cron: '0 12 * * *'  # daily at 12:00 UTC — SDE check + deploy
   workflow_dispatch:
+  workflow_run:
+    workflows: ["Fetch Kill & Jump Stats"]
+    types: [completed]
 
 jobs:
   deploy:
