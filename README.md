@@ -104,6 +104,8 @@ When a system's count exceeds `MAX_COUNTS`, its circle radius scales from 1× up
 
 Hovering over a system displays its current count below the circle.
 
+Right-clicking a system circle opens a context menu showing the system name. When logged in via EVE SSO, a **Set Destination** item is shown; selecting it calls `POST /ui/autopilot/waypoint/` on ESI to set the system as the autopilot destination in the EVE client.
+
 ---
 
 ## Data Modes
@@ -157,7 +159,7 @@ Authentication uses the **EVE SSO OAuth2 PKCE flow** — no server required, all
 
 1. Register an application at [developers.eveonline.com](https://developers.eveonline.com/):
    - **Callback URLs**: `http://localhost:5173/` (dev) and your GitHub Pages URL (production)
-   - **Scopes**: `esi-location.read_location.v1`
+   - **Scopes**: `esi-location.read_location.v1 esi-ui.write_waypoint.v1`
 2. Set the Client ID for local development in `src/config.js` (used as fallback):
    ```js
    export const EVE_CLIENT_ID = import.meta.env.VITE_EVE_CLIENT_ID ?? 'your_dev_client_id'

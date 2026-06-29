@@ -380,6 +380,7 @@ export default function App() {
         tracking={tracking}
         onUserInteract={() => setTracking(false)}
         focusTarget={focusTarget}
+        loggedIn={loggedIn}
       />
       <TimeSlider
         snapshots={snapshots}

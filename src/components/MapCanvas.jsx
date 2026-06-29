@@ -2,17 +2,21 @@
 // This file is released into the public domain under the CC0 1.0 Universal license.
 import { useMemo, useState, useRef, useEffect, useCallback } from 'react'
 import { killCountToColor, MAX_COUNTS, MAX_COUNTS_HIGH } from '../utils/colorScale'
+import { getValidAccessToken } from '../utils/auth'
 
 const SYSTEM_RADIUS = 2
 const MIN_ZOOM = 0.05
 const MAX_ZOOM = 20
+const ESI = 'https://esi.evetech.net/latest'
 
-export default function MapCanvas({ systems, stargates, killData, killMode = 'player', regions = {}, highlightSystemId = null, tracking = false, onUserInteract, focusTarget = null }) {
+export default function MapCanvas({ systems, stargates, killData, killMode = 'player', regions = {}, highlightSystemId = null, tracking = false, onUserInteract, focusTarget = null, loggedIn = false }) {
   const containerRef = useRef(null)
   const [transform, setTransform] = useState({ x: 0, y: 0, k: 1 })
   const dragging = useRef(false)
   const dragStart = useRef(null)
   const [hovered, setHovered] = useState(null) // { _key, kills, r, px, py }
+  const [contextMenu, setContextMenu] = useState(null) // { systemId, name, menuX, menuY }
+  const [waypointStatus, setWaypointStatus] = useState(null) // 'ok' | 'error' | null
 
   const { projected, links, bounds, regionLabels = [] } = useMemo(() => {
     if (!systems.length) return { projected: [], links: [], bounds: null }
@@ -111,6 +115,13 @@ export default function MapCanvas({ systems, stargates, killData, killMode = 'pl
     return () => el.removeEventListener('wheel', onWheel)
   }, [])
 
+  // Close context menu on Escape
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') setContextMenu(null) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
   // Mouse drag
   const onMouseDown = (e) => {
     onUserInteract?.()
@@ -127,6 +138,33 @@ export default function MapCanvas({ systems, stargates, killData, killMode = 'pl
   }
   const onMouseUp = () => { dragging.current = false }
 
+  const handleSystemClick = (e, s) => {
+    e.stopPropagation()
+    const rect = containerRef.current?.getBoundingClientRect()
+    const menuX = rect ? e.clientX - rect.left : e.clientX
+    const menuY = rect ? e.clientY - rect.top : e.clientY
+    setContextMenu({ systemId: s._key, name: s.name?.en ?? String(s._key), menuX, menuY })
+    setWaypointStatus(null)
+  }
+
+  const handleSetDestination = async () => {
+    if (!contextMenu) return
+    const { systemId } = contextMenu
+    setContextMenu(null)
+    const token = await getValidAccessToken()
+    if (!token) { setWaypointStatus('error'); return }
+    try {
+      const resp = await fetch(
+        `${ESI}/ui/autopilot/waypoint/?add_to_beginning=false&clear_other_waypoints=false&destination_id=${systemId}&datasource=tranquility`,
+        { method: 'POST', headers: { Authorization: `Bearer ${token}` } }
+      )
+      setWaypointStatus(resp.ok ? 'ok' : 'error')
+    } catch (_) {
+      setWaypointStatus('error')
+    }
+    setTimeout(() => setWaypointStatus(null), 3000)
+  }
+
   const { k, x, y } = transform
 
   return (
@@ -137,6 +175,8 @@ export default function MapCanvas({ systems, stargates, killData, killMode = 'pl
       onMouseMove={onMouseMove}
       onMouseUp={onMouseUp}
       onMouseLeave={onMouseUp}
+      onClick={() => setContextMenu(null)}
+      onContextMenu={(e) => e.preventDefault()}
     >
       {!systems.length && (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#556' }}>
@@ -171,6 +211,8 @@ export default function MapCanvas({ systems, stargates, killData, killMode = 'pl
                   fill="transparent" stroke="none"
                   onMouseEnter={() => setHovered({ _key: s._key, kills, r, px: s.px, py: s.py })}
                   onMouseLeave={() => setHovered(h => h?._key === s._key ? null : h)}
+                  onContextMenu={(e) => { e.preventDefault(); handleSystemClick(e, s) }}
+                  style={{ cursor: 'context-menu' }}
                 />
                 {s._key === highlightSystemId && (
                   <circle cx={s.px} cy={s.py} r={r * 2.5} fill="none" stroke="#ffee44" strokeWidth={1.5 / k} opacity={0.9} />
@@ -222,6 +264,66 @@ export default function MapCanvas({ systems, stargates, killData, killMode = 'pl
           ))}
         </g>
       </svg>
+
+      {contextMenu && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            position: 'absolute',
+            left: contextMenu.menuX,
+            top: contextMenu.menuY,
+            background: '#1a2233',
+            border: '1px solid #334',
+            borderRadius: 4,
+            zIndex: 100,
+            minWidth: 160,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.6)',
+            fontFamily: 'Arial, sans-serif',
+            fontSize: 13,
+            color: '#aabbcc',
+          }}
+        >
+          <div style={{
+            padding: '6px 10px',
+            borderBottom: '1px solid #334',
+            color: '#667788',
+            fontSize: 11,
+            userSelect: 'none',
+          }}>
+            {contextMenu.name}
+          </div>
+          {loggedIn && (
+            <div
+              onClick={handleSetDestination}
+              style={{ padding: '7px 10px', cursor: 'pointer' }}
+              onMouseEnter={e => e.currentTarget.style.background = '#243048'}
+              onMouseLeave={e => e.currentTarget.style.background = ''}
+            >
+              Set Destination
+            </div>
+          )}
+        </div>
+      )}
+
+      {waypointStatus && (
+        <div style={{
+          position: 'absolute',
+          bottom: 56,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: waypointStatus === 'ok' ? '#1a3322' : '#331a1a',
+          border: `1px solid ${waypointStatus === 'ok' ? '#336644' : '#663333'}`,
+          color: waypointStatus === 'ok' ? '#66cc88' : '#cc6666',
+          padding: '6px 14px',
+          borderRadius: 4,
+          fontSize: 13,
+          fontFamily: 'Arial, sans-serif',
+          zIndex: 100,
+          pointerEvents: 'none',
+        }}>
+          {waypointStatus === 'ok' ? 'Destination set.' : 'Failed to set destination.'}
+        </div>
+      )}
     </div>
   )
 }
