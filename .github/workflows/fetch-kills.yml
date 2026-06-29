@@ -1,5 +1,6 @@
 name: Fetch Kill & Jump Stats
 
+
 on:
   schedule:
     - cron: '0 * * * *'  # every hour at :00
