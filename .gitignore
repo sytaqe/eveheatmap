@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.vscode/
+RELEASE.md
+public/data/mapSolarSystems.jsonl
+public/data/mapStargates.jsonl
+public/data/mapRegions.jsonl
+# public/data/kills/ is managed by GitHub Actions
