@@ -2,7 +2,7 @@
 // This file is released into the public domain under the CC0 1.0 Universal license.
 // Stage 1 upper bound → red
 export const MAX_COUNTS = {
-  player: 50,
+  player: 10,
   npc:    1000,
   jumps:  500,
 }

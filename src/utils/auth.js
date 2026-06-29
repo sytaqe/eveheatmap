@@ -7,7 +7,8 @@ const SSO_AUTH_URL  = 'https://login.eveonline.com/v2/oauth/authorize'
 const SSO_TOKEN_URL = 'https://login.eveonline.com/v2/oauth/token'
 
 function redirectUri() {
-  return window.location.origin + window.location.pathname
+  const path = window.location.pathname.replace(/\/?$/, '/')
+  return window.location.origin + path
 }
 
 // PKCE helpers
