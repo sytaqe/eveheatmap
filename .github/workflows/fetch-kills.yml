@@ -3,7 +3,7 @@ name: Fetch Kill & Jump Stats
 
 on:
   schedule:
-    - cron: '0 * * * *'  # every hour at :00
+    - cron: '17 * * * *'  # every hour at :17
   workflow_dispatch:      # allow manual trigger
 
 jobs:
