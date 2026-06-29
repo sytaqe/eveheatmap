@@ -32,7 +32,7 @@ export default function MapCanvas({ systems, stargates, killData, killMode = 'pl
     const sysMap = new Map()
     const projected = filtered.map((s, i) => {
       const px = (coords[i].x - minX) * scale
-      const py = (coords[i].y - minY) * scale
+      const py = (maxY - coords[i].y) * scale
       sysMap.set(s._key, { px, py })
       return { ...s, px, py }
     })
