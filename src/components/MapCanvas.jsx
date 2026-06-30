@@ -292,6 +292,14 @@ export default function MapCanvas({ systems, stargates, killData, killMode = 'pl
           }}>
             {contextMenu.name}
           </div>
+          <div
+            onClick={() => { navigator.clipboard.writeText(contextMenu.name); setContextMenu(null) }}
+            style={{ padding: '7px 10px', cursor: 'pointer' }}
+            onMouseEnter={e => e.currentTarget.style.background = '#243048'}
+            onMouseLeave={e => e.currentTarget.style.background = ''}
+          >
+            Copy &ldquo;{contextMenu.name}&rdquo;
+          </div>
           {loggedIn && (
             <div
               onClick={handleSetDestination}
