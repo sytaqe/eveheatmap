@@ -150,7 +150,7 @@ export default function App() {
 
   // Load kill snapshots index; apply hash-based initial state if present
   useEffect(() => {
-    fetch(`${BASE}data/kills/index.json?t=${Date.now()}`)
+    fetch(`${BASE}data/kills/index.json`)
       .then(r => r.json())
       .then(list => {
         setSnapshots(list)
@@ -190,7 +190,7 @@ export default function App() {
     let updatedThisHour = false
 
     const poll = () => {
-      fetch(`${BASE}data/kills/index.json?t=${Date.now()}`)
+      fetch(`${BASE}data/kills/index.json`)
         .then(r => r.json())
         .then(list => {
           if (list.length > snapshotsLengthRef.current) {
@@ -240,18 +240,15 @@ export default function App() {
   }, [sliderMode, selectedIndex, selectedHour, snapshots])
 
   // Snapshot mode: load single snapshot
-  const [loadingSnapshot, setLoadingSnapshot] = useState(false)
   useEffect(() => {
     if (sliderMode !== 'snapshot') return
     if (!snapshots.length) return
     const snap = snapshots[selectedIndex]
     if (!snap) return
-    setLoadingSnapshot(true)
     fetch(`${BASE}data/kills/${snap.filename}`)
       .then(r => r.json())
       .then(setKillData)
       .catch(() => setKillData(null))
-      .finally(() => setLoadingSnapshot(false))
   }, [snapshots, selectedIndex, sliderMode])
 
   // Hourly average mode: read from pre-computed hourly_avg.json
@@ -385,23 +382,6 @@ export default function App() {
         focusTarget={focusTarget}
         loggedIn={loggedIn}
       />
-      {loadingSnapshot && (
-        <div style={{
-          position: 'absolute',
-          bottom: TIME_SLIDER_HEIGHT + 8,
-          left: 12,
-          zIndex: 10,
-          background: 'rgba(0,0,0,0.6)',
-          color: '#778899',
-          fontSize: 12,
-          fontFamily: 'monospace',
-          padding: '4px 10px',
-          borderRadius: 4,
-          pointerEvents: 'none',
-        }}>
-          Loading data...
-        </div>
-      )}
       <TimeSlider
         snapshots={snapshots}
         selectedIndex={selectedIndex}
