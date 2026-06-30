@@ -1,15 +1,15 @@
 name: Fetch Kill & Jump Stats
 
+
 on:
-  schedule:
-    - cron: '0 * * * *'  # every hour at :00
-  workflow_dispatch:      # allow manual trigger
+  workflow_dispatch:
 
 jobs:
   fetch:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: write
 
     steps:
       - uses: actions/checkout@v4
@@ -28,3 +28,8 @@ jobs:
           git add public/data/kills/
           git diff --cached --quiet || git commit -m "chore: update kill/jump stats $(date -u '+%Y-%m-%d %H:%M') UTC"
           git push
+
+      - name: Trigger deploy
+        run: gh workflow run deploy.yml
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
