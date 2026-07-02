@@ -167,6 +167,22 @@ export default function MapCanvas({ systems, stargates, killData, killMode = 'pl
 
   const { k, x, y } = transform
 
+  // Viewport culling: only render systems visible in the current viewport
+  const vw = containerRef.current?.clientWidth ?? 900
+  const vh = containerRef.current?.clientHeight ?? 800
+  const margin = 20
+  const visMinX = (-x / k) - margin
+  const visMaxX = ((vw - x) / k) + margin
+  const visMinY = (-y / k) - margin
+  const visMaxY = ((vh - y) / k) + margin
+  const visibleSystems = projected.filter(s =>
+    s.px >= visMinX && s.px <= visMaxX && s.py >= visMinY && s.py <= visMaxY
+  )
+  const visibleLinks = links.filter(l =>
+    (l.x1 >= visMinX && l.x1 <= visMaxX && l.y1 >= visMinY && l.y1 <= visMaxY) ||
+    (l.x2 >= visMinX && l.x2 <= visMaxX && l.y2 >= visMinY && l.y2 <= visMaxY)
+  )
+
   return (
     <div
       ref={containerRef}
@@ -185,7 +201,7 @@ export default function MapCanvas({ systems, stargates, killData, killMode = 'pl
       )}
       <svg width="100%" height="100%">
         <g transform={`translate(${x},${y}) scale(${k})`}>
-          {links.map((l, i) => (
+          {visibleLinks.map((l, i) => (
             <line
               key={i}
               x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2}
@@ -193,7 +209,7 @@ export default function MapCanvas({ systems, stargates, killData, killMode = 'pl
               strokeWidth={0.5 / k}
             />
           ))}
-          {projected.map(s => {
+          {visibleSystems.map(s => {
             const kd = killData?.[s._key]
             const kills = kd ? (killMode === 'npc' ? (kd.n ?? 0) : killMode === 'jumps' ? (kd.j ?? 0) : (kd.s ?? 0) + (kd.p ?? 0)) : 0
             const color = killCountToColor(kills, killMode)
@@ -300,6 +316,17 @@ export default function MapCanvas({ systems, stargates, killData, killMode = 'pl
           >
             Copy &ldquo;{contextMenu.name}&rdquo;
           </div>
+          <a
+            href={`https://zkillboard.com/system/${contextMenu.systemId}/`}
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => setContextMenu(null)}
+            style={{ display: 'block', padding: '7px 10px', cursor: 'pointer', color: 'inherit', textDecoration: 'none' }}
+            onMouseEnter={e => e.currentTarget.style.background = '#243048'}
+            onMouseLeave={e => e.currentTarget.style.background = ''}
+          >
+            zKillboard
+          </a>
           {loggedIn && (
             <div
               onClick={handleSetDestination}
